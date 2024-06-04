@@ -43,6 +43,7 @@ def find_feature_staffs(features, staffs):
         staffs = staffs.reshape(-1, 1)
         
     matched_staffs = np.zeros(features.shape[0])
+
     for f in range(features.shape[0]):
         _, y, _, _ = features[f]
         y = float(y)
@@ -115,7 +116,6 @@ def get_staff_lines(width, height, in_img, threshold=0.8):
     for row in range(len(row_histogram)):
         if row_histogram[row] >= (width * threshold):
             initial_lines.append(row)
-
     it = 0
     cur_thickness = 1
 
@@ -132,7 +132,6 @@ def get_staff_lines(width, height, in_img, threshold=0.8):
             cur_thickness = 1
 
         it += 1
-
     return staff_lines_thicknesses, staff_lines
 
 def remove_single_line(line_thickness, line_start, in_img, width):
@@ -168,9 +167,16 @@ def remove_staff_lines(in_img, width, staff_lines, staff_lines_thicknesses):
         it += 1
     return in_img
 
-def preprocess(img):
-    height = img.shape[0]
-    width = img.shape[1]
-    staff_lines_thicknesses, staff_lines = get_staff_lines(width, height, img)
-    img = remove_staff_lines(img, width, staff_lines, staff_lines_thicknesses)
-    return img
+def preprocess_img(img_path):
+    # 1. Read desired image #
+    img = cv2.imread(img_path, 0)
+    
+    # 2. Remove noise (odd pixels) from the image and save it #
+    img = cv2.fastNlMeansDenoising(img, None, 10, 7, 21)
+
+    # 3. Binarize image using combination of (global + otsu) thresholding and save it #
+    threshold, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+    # 4. Return image shape (width, height) and processed image # 
+    n, m = img.shape
+    return n, m, img

@@ -28,7 +28,7 @@ def hough_circle(height):
     # returns all circles
     detected_circles = cv2.HoughCircles(edge_detected_image,
                                         cv2.HOUGH_GRADIENT, 1, 41, param1=100,
-                                        param2=9, minRadius=height - 2, maxRadius=height + 4)
+                                        param2=9, minRadius=int(height - 2), maxRadius=int(height + 4))
 
     #draw circles that are detected
     if detected_circles is not None:

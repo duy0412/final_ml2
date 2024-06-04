@@ -19,6 +19,7 @@ from preprocessing.staff_detection import (
     process_image,
     get_staff_lines,
     load_features,
+    detect_staff_lines,
     find_feature_staffs,
     find_pitches,
     find_staff_distance,
@@ -26,7 +27,7 @@ from preprocessing.staff_detection import (
     construct_note,
     remove_single_line,
     remove_staff_lines,
-    preprocess,
+
 )
 from postprocessing.image_operations import (
     load_image,
@@ -93,7 +94,7 @@ def command_line_args():
     parser = argparse.ArgumentParser(
         description='A program that creates a MIDI file from an image and extracted musical features!')
     parser.add_argument("--image-path",
-                        default='../code/data/fuzzy-wuzzy.png',
+                        default='../code/data/quarter.png',
                         type=str,
                         help="This is the path to your image!")
     parser.add_argument("--features-path",
@@ -121,23 +122,23 @@ def main():
 
     output_path = '../final/omr/code/results/processed.png'
     # The current image to process
-    sheet_img = cv2.imread(args.image_path, cv2.IMREAD_GRAYSCALE)
-    
+    sheet_img = process_image(args.image_path)
+ 
     if sheet_img is None:
         print(f"Error: Unable to load image at {args.image_path}")
         sys.exit(1)
 
-    height, width = sheet_img.shape
-    staff_lines_thicknesses, staff_lines = get_staff_lines(width, height, sheet_img)
+
+    staff_lines = detect_staff_lines(sheet_img)
+    staff_lines_thicknesses = find_staff_distance(staff_lines)
 
     # A [# of features x 4] array holding all of the features for the image
     truth_features = load_features(args.features_path)
 
-    # Preprocess to remove staff lines
-    processed_img = preprocess(sheet_img)
+
 
     # Further process to remove remaining staff artifacts
-    final_img = staff_removal(args.image_path, max(staff_lines_thicknesses) if staff_lines_thicknesses else 10)
+    final_img = staff_removal(args.image_path, min(staff_lines_thicknesses, 10))
 
     # Save the final processed image
     if save_image('../code/results/processed.png', final_img):
@@ -146,7 +147,7 @@ def main():
         print("Staff removal failed.")
 
     # Hough Detection
-    detected_circles = hough_circle(int(max(staff_lines_thicknesses) if staff_lines_thicknesses else 10))
+    detected_circles = hough_circle(min(staff_lines_thicknesses, 10))
     features = circles_to_features(detected_circles)
 
     # Bounding Boxes
@@ -191,13 +192,13 @@ def main():
     if not args.no_vis:
         visualize_image(sheet_img, as_gray=True)
         visualize_staff_lines(sheet_img, staff_lines)
-        visualize_notes(sheet_img, features, staff_lines, matched_staffs, pitches, max(staff_lines_thicknesses) if staff_lines_thicknesses else 10)
+        visualize_notes(sheet_img, features, staff_lines, matched_staffs, pitches, min(staff_lines_thicknesses, 10))
         show_image()
 
     notes = construct_notes(features, staff_lines, matched_staffs, pitches)
 
     path = Path(args.image_path).stem
     create_midi(path, notes)
-
+    print("Created midi file")
 if __name__ == "__main__":
     main()
