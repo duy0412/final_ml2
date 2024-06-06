@@ -3,10 +3,8 @@ import pandas as pd
 import warnings
 import argparse
 from pathlib import Path
-import cv2
 import tensorflow as tf
 import sys
-import skimage
 import matplotlib
 matplotlib.use('TkAgg')  # Set the backend to TkAgg or another suitable one
 from matplotlib import patches
@@ -17,20 +15,15 @@ from skimage import io, img_as_ubyte, img_as_float32, color, util
 from postprocessing.midi_conversion import create_midi
 from preprocessing.staff_detection import (
     process_image,
-    get_staff_lines,
     load_features,
     detect_staff_lines,
     find_feature_staffs,
     find_pitches,
     find_staff_distance,
-    construct_notes,
-    construct_note,
-    remove_single_line,
-    remove_staff_lines,
+    construct_notes
 
 )
 from postprocessing.image_operations import (
-    load_image,
     save_image,
     show_image,
     visualize_image,
@@ -38,7 +31,7 @@ from postprocessing.image_operations import (
     visualize_notes,
 )
 from preprocessing.staff_removal import staff_removal
-from note_detection.hough_circles import hough_circle, hough_circle_input
+from note_detection.hough_circles import hough_circle
 from note_detection.contour import make_bounding_boxes
 from deep_learning.model import NoteClassificationModel
 
@@ -94,7 +87,7 @@ def command_line_args():
     parser = argparse.ArgumentParser(
         description='A program that creates a MIDI file from an image and extracted musical features!')
     parser.add_argument("--image-path",
-                        default='../code/data/quarter.png',
+                        default='../code/data/fuzzy-wuzzy.png',
                         type=str,
                         help="This is the path to your image!")
     parser.add_argument("--features-path",
@@ -179,7 +172,7 @@ def main():
 
         classified_list = dl_classification(model, sheet_img, class_names, bounding_boxes)
         features = create_features(classified_list, class_names, bounding_boxes)
-
+        
         print("Used CNN to classify features.")
 
     # Feature Matching
@@ -200,5 +193,7 @@ def main():
     path = Path(args.image_path).stem
     create_midi(path, notes)
     print("Created midi file")
+
+    
 if __name__ == "__main__":
     main()

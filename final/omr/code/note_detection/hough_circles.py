@@ -69,9 +69,6 @@ def hough_circle_input(img, bb, height, simg):
         dim = bb[i]
         cutout = img[dim[1]: (dim[1] + dim[3]), dim[0]: (dim[0] + dim[2])]
 
-        # blur using 3 * 3 kernel
-        gray_blurred = cv2.blur(cutout, (3, 3))
-
         # edges
         edge_detected_image = cv2.Canny(cutout, 75, 200)
 
